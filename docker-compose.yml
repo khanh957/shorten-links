@@ -1,0 +1,35 @@
+version: '3.4'
+services:
+  backend:
+    container_name: backend
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/usr/src/app:cached
+    depends_on:
+      - db
+    networks:
+      - shorten_link
+    stdin_open: true
+    tty: true
+
+  db:
+    image: postgres:15.4-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5432:5432
+    networks:
+      - shorten_link
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+networks:
+  shorten_link:
+    driver: bridge
+
+volumes:
+  pgdata:
