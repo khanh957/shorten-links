@@ -19,10 +19,19 @@ class ShortUrlsController < ApplicationController
     end
 
     short_code = full_url.sub("#{request.base_url}/", '')
+
+    cached_url = $redis.get(short_code)
+    if cached_url
+      render json: { original_url: cached_url }, status: :ok
+      return
+    end
+
     short_url = ShortUrl.find_by!(short_code: short_code)
     if short_url.expired?
       render json: { error: 'Short URL has expired' }, status: :bad_request
     else
+      ttl = short_url.expired_at ? (short_url.expired_at - Time.current).to_i : nil
+      $redis.set("#{short_code}", short_url.original_url, ex: ttl || 3600)
       render json: { original_url: short_url.original_url }, status: :ok
     end
   rescue ActiveRecord::RecordNotFound
@@ -30,10 +39,20 @@ class ShortUrlsController < ApplicationController
   end
 
   def redirect
-    short_url = ShortUrl.find_by!(short_code: params[:short_code])
+    short_code = params[:short_code]
+
+    cached_url = $redis.get(short_code)
+    if cached_url
+      redirect_to cached_url, allow_other_host: true
+      return
+    end
+
+    short_url = ShortUrl.find_by!(short_code: short_code)
     if short_url.expired?
       render plain: 'Short URL has expired', status: :bad_request
     else
+      ttl = short_url.expired_at ? (short_url.expired_at - Time.current).to_i : nil
+      $redis.set(short_code, short_url.original_url, ex: ttl || 3600)
       redirect_to short_url.original_url, allow_other_host: true
     end
   rescue ActiveRecord::RecordNotFound

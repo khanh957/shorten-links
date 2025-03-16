@@ -1,6 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe ShortUrlsController, type: :controller do
+  let(:valid_short_url) { create(:short_url, short_code: 'test123', original_url: 'https://example.com') }
+  let(:expired_short_url) { create(:short_url, :expired, short_code: 'code_expired') }
+
   describe 'POST #encode' do
     context 'with valid params' do
       let(:valid_params) do
@@ -41,48 +44,92 @@ RSpec.describe ShortUrlsController, type: :controller do
   end
 
   describe 'POST #decode' do
-    it 'returns original_url for valid short URL' do
-      create(:short_url, original_url: 'https://example.com', short_code: 'test123')
-      post :decode, params: { url: 'http://test.host/test123' }, format: :json
-      expect(response).to have_http_status(:ok)
-      json = JSON.parse(response.body)
-      expect(json['original_url']).to eq('https://example.com')
+    context 'when URL is cached in Redis' do
+      before do
+        $redis.set('test123', 'https://example.com')
+      end
+
+      it 'returns cached original_url without query database' do
+        expect(ShortUrl).not_to receive(:find_by!)
+        post :decode, params: { url: 'http://test.host/test123' }, format: :json
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json['original_url']).to eq('https://example.com')
+      end
     end
 
-    it 'returns error for expired short URL' do
-      create(:short_url, :expired, short_code: 'Expired')
-      post :decode, params: { url: 'http://test.host/Expired' }, format: :json
-      expect(response).to have_http_status(:bad_request)
-      json = JSON.parse(response.body)
-      expect(json['error']).to eq('Short URL has expired')
-    end
+    context 'when URL is not cached' do
+      it 'fetches from database and caches it' do
+        valid_short_url
+        post :decode, params: { url: 'http://test.host/test123' }, format: :json
+        expect(response).to have_http_status(:ok)
+        json = JSON.parse(response.body)
+        expect(json['original_url']).to eq('https://example.com')
+        expect($redis.get('test123')).to eq('https://example.com')
+        expect($redis.ttl('test123')).to eq(3600)
+      end
 
-    it 'returns error for non-existent short URL' do
-      post :decode, params: { url: 'http://test.host/NonExist' }, format: :json
-      expect(response).to have_http_status(:not_found)
-      json = JSON.parse(response.body)
-      expect(json['error']).to eq('Short URL not found')
+      it 'caches with custom TTL if expired_at is set' do
+        create(:short_url, short_code: 'Temp123', original_url: 'https://temp.com', expired_at: 2.hours.from_now)
+        post :decode, params: { url: 'http://test.host/Temp123' }, format: :json
+        expect(response).to have_http_status(:ok)
+        ttl = $redis.ttl('Temp123')
+        expect(ttl).to be_between(7000, 7200)
+      end
+
+      it 'returns error if short_url is expired' do
+        expired_short_url
+        post :decode, params: { url: 'http://test.host/code_expired' }, format: :json
+        expect(response).to have_http_status(:bad_request)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Short URL has expired')
+      end
+
+      it 'returns error if short_url not found' do
+        post :decode, params: { url: 'http://test.host/NonExist' }, format: :json
+        expect(response).to have_http_status(:not_found)
+        json = JSON.parse(response.body)
+        expect(json['error']).to eq('Short URL not found')
+      end
     end
   end
 
   describe 'GET #redirect' do
-    it 'redirects to original_url for valid short_code' do
-      create(:short_url, original_url: 'https://example.com', short_code: 'test123')
-      get :redirect, params: { short_code: 'test123' }
-      expect(response).to redirect_to('https://example.com')
+    context 'when URL is cached in Redis' do
+      before do
+        $redis.set('test123', 'https://example.com')
+      end
+
+      it 'redirects to cached URL without hitting database' do
+        expect(ShortUrl).not_to receive(:find_by!)
+        get :redirect, params: { short_code: 'test123' }
+        expect(response).to redirect_to('https://example.com')
+        expect(response).to have_http_status(:found)
+      end
     end
 
-    it 'returns error for expired short_code' do
-      create(:short_url, :expired, short_code: 'Expired')
-      get :redirect, params: { short_code: 'Expired' }
-      expect(response).to have_http_status(:bad_request)
-      expect(response.body).to eq('Short URL has expired')
-    end
+    context 'when URL is not cached' do
+      it 'fetches from database, caches, and redirects' do
+        valid_short_url
+        get :redirect, params: { short_code: 'test123' }
+        expect(response).to redirect_to('https://example.com')
+        expect(response).to have_http_status(:found)
+        expect($redis.get('test123')).to eq('https://example.com')
+        expect($redis.ttl('test123')).to eq(3600)
+      end
 
-    it 'returns error for non-existent short_code' do
-      get :redirect, params: { short_code: 'NonExist' }
-      expect(response).to have_http_status(:not_found)
-      expect(response.body).to eq('Short URL not found')
+      it 'returns error if short_url is expired' do
+        expired_short_url
+        get :redirect, params: { short_code: 'code_expired' }
+        expect(response).to have_http_status(:bad_request)
+        expect(response.body).to eq('Short URL has expired')
+      end
+
+      it 'returns error if short_url not found' do
+        get :redirect, params: { short_code: 'wrong_code' }
+        expect(response).to have_http_status(:not_found)
+        expect(response.body).to eq('Short URL not found')
+      end
     end
   end
 end
