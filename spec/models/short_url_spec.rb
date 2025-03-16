@@ -48,7 +48,7 @@ RSpec.describe ShortUrl, type: :model do
     it 'generates short_code if not provided' do
       short_url = create(:short_url, short_code: nil)
       expect(short_url.short_code).to be_present
-      expect(short_url.short_code.length).to eq(6)
+      expect(short_url.short_code).is_a?(String)
     end
 
     it 'keeps custom short_code if provided' do

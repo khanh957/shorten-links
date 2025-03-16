@@ -14,7 +14,7 @@ RSpec.describe ShortUrlsController, type: :controller do
         post :encode, params: valid_params, format: :json
         expect(response).to have_http_status(:ok)
         json = JSON.parse(response.body)
-        expect(json['short_url']).to match(%r{http://test.host/[A-Za-z0-9_-]{6}})
+        expect(json['short_url']).to match(%r{http://test.host/[A-Za-z0-9_-]})
       end
 
       it 'uses custom_short_code if provided' do

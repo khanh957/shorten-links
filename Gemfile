@@ -51,7 +51,7 @@ gem "bootsnap", require: false
 # gem "image_processing", "~> 1.2"
 
 gem "rack-cors"
-gem 'nanoid', '~> 0.1.0'
+gem 'base62'
 gem "redis"
 gem 'sidekiq'
 gem 'sidekiq-cron'

@@ -20,10 +20,11 @@ RUN bundle install
 
 # Init script
 COPY ./init.sh /
+COPY ./init-sidekiq.sh /
 RUN apt-get update -y && \
   apt-get install -y dos2unix
-RUN dos2unix /init.sh
-RUN chmod +x /init.sh
+RUN dos2unix /init.sh /init-sidekiq.sh
+RUN chmod +x /init.sh /init-sidekiq.sh
 ENTRYPOINT [ "/init.sh" ]
 
 EXPOSE 3000

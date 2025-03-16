@@ -12,7 +12,11 @@ class ShortUrl < ApplicationRecord
   private
 
   def generate_short_code
-    self.short_code = Nanoid.generate(size: 6)
+    random_number = SecureRandom.random_number(1000000000)
+    max_id = ShortUrl.maximum(:id).to_i rescue 0
+    combined_number = max_id * 1000000000 + random_number
+    
+    self.short_code = Base62.encode(combined_number)
   rescue ActiveRecord::RecordNotUnique
     retry
   end

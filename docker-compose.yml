@@ -35,7 +35,7 @@ services:
 
   sidekiq:
     build: .
-    command: bundle exec sidekiq
+    entrypoint: ["/init-sidekiq.sh"]
     depends_on:
       - backend
       - db
