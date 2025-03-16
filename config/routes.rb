@@ -3,4 +3,7 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   # root "articles#index"
+  post '/encode', to: 'short_urls#encode'
+  post '/decode', to: 'short_urls#decode'
+  get '/:short_code', to: 'short_urls#redirect'
 end
