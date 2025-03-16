@@ -16,6 +16,7 @@
 RSpec.configure do |config|
   config.before(:each) do
     $redis = MockRedis.new
+    ActiveJob::Base.queue_adapter = :test
   end
 
   config.after(:each) do

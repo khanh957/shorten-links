@@ -225,6 +225,11 @@ GEM
       rspec-expectations (~> 3.13)
       rspec-mocks (~> 3.13)
       rspec-support (~> 3.13)
+    rspec-sidekiq (5.1.0)
+      rspec-core (~> 3.0)
+      rspec-expectations (~> 3.0)
+      rspec-mocks (~> 3.0)
+      sidekiq (>= 5, < 9)
     rspec-support (3.13.2)
     rubyzip (2.4.1)
     selenium-webdriver (4.29.1)
@@ -298,6 +303,7 @@ DEPENDENCIES
   rails (~> 7.0.8, >= 7.0.8.7)
   redis
   rspec-rails (~> 6.0, >= 6.0.3)
+  rspec-sidekiq
   selenium-webdriver
   sidekiq
   sidekiq-cron

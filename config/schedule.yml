@@ -1,0 +1,3 @@
+clean_expired_short_urls:
+  class: CleanExpiredShortUrlsJob
+  cron: "0 0 * * *"

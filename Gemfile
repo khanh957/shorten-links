@@ -53,6 +53,8 @@ gem "bootsnap", require: false
 gem "rack-cors"
 gem 'nanoid', '~> 0.1.0'
 gem "redis"
+gem 'sidekiq'
+gem 'sidekiq-cron'
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
@@ -77,4 +79,5 @@ group :test do
   gem "capybara"
   gem "selenium-webdriver"
   gem 'mock_redis'
+  gem 'rspec-sidekiq'
 end
