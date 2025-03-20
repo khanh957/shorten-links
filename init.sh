@@ -1,5 +1,8 @@
 #!/bin/bash
 
+service postgresql start
+service redis-server start
+
 #create database
 rails db:create RAILS_ENV=development
 rails db:migrate RAILS_ENV=development

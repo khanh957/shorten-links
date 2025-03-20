@@ -3,49 +3,49 @@ services:
   backend:
     container_name: backend
     build: .
-    command: rails server -b 0.0.0.0
+    # command: rails server -b 0.0.0.0
     env_file:
       - .env
     ports:
       - "3000:3000"
     volumes:
       - .:/usr/src/app:cached
-    depends_on:
-      - db
-      - redis
+    # depends_on:
+    #   - db
+    #   - redis
     networks:
       - shorten_link
     stdin_open: true
     tty: true
 
-  db:
-    image: postgres:15.4-alpine
-    environment:
-      POSTGRES_PASSWORD: postgres
-    networks:
-      - shorten_link
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+  # db:
+  #   image: postgres:15.4-alpine
+  #   environment:
+  #     POSTGRES_PASSWORD: postgres
+  #   networks:
+  #     - shorten_link
+  #   volumes:
+  #     - pgdata:/var/lib/postgresql/data
     
-  redis:
-    image: redis:latest
-    container_name: redis
-    networks:
-      - shorten_link
+  # redis:
+  #   image: redis:latest
+  #   container_name: redis
+  #   networks:
+  #     - shorten_link
 
-  sidekiq:
-    build: .
-    entrypoint: ["/init-sidekiq.sh"]
-    depends_on:
-      - backend
-      - db
-      - redis
-    env_file:
-      - .env
-    volumes:
-      - .:/usr/src/app:cached
-    networks:
-      - shorten_link
+  # sidekiq:
+  #   build: .
+  #   entrypoint: ["/init-sidekiq.sh"]
+  #   depends_on:
+  #     - backend
+  #     - db
+  #     - redis
+  #   env_file:
+  #     - .env
+  #   volumes:
+  #     - .:/usr/src/app:cached
+  #   networks:
+  #     - shorten_link
 
 networks:
   shorten_link:
